@@ -1,2 +1,3 @@
 **/*.DS_Store
 ML Lectures/Recurrent Architectures Hands On/glove.6B.100d.txt
+lec_20_support_bot_with_RAG/chroma_db/chroma.sqlite3

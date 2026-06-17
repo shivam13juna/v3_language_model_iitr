@@ -1,0 +1,18 @@
+# Never ship these into the build context
+.git
+.gitignore
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.*
+*.ipynb_checkpoints
+# AI-specific bloat — keep big data/weights OUT unless intentionally baking them
+data/
+datasets/
+*.csv
+*.parquet
+notebooks/
+.pytest_cache/
+README.md

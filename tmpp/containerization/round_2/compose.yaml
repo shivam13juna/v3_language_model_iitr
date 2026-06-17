@@ -1,0 +1,58 @@
+services:
+  
+  api:
+    build: .                          # the multi-stage Dockerfile in this dir
+    ports:
+      - "8000:8000"
+    env_file:
+      #- .env                          # supplies OPENAI_API_KEY (never baked in)
+      - /Users/shivam13juna/Documents/scaler/iitr_classes/llm_ref/openai_key.env
+    environment:
+      - CHROMA_HOST=chroma                # reach the DB by SERVICE NAME
+      - CHROMA_PORT=8000
+      - CHROMA_COLLECTION=rag_demo
+      - CHAT_MODEL=gpt-5-nano
+      - EMBED_MODEL=text-embedding-3-small
+      - TOP_K=5
+    depends_on:
+      chroma:
+        condition: service_healthy        # wait until Chroma answers its heartbeat
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks: [ragnet]
+
+
+  chroma:
+    image: chromadb/chroma:1.0.15     # pinned, NOT :latest
+    ports:
+      # Chroma serves on 8000 inside the container; publish on 8001 to avoid
+      # clashing with the api's 8000 on the host (host:container may differ).
+      - "8001:8000"
+    environment:
+      - IS_PERSISTENT=TRUE            # write the index to disk...
+      - PERSIST_DIRECTORY=/data       # ...here, which we back with a named volume
+      - ANONYMIZED_TELEMETRY=FALSE
+    volumes:
+      - chroma_data:/data             # named volume => vectors persist
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/localhost/8000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks: [ragnet]
+
+# A private network for the stack; services find each other by name.
+networks:
+  ragnet:
+    driver: bridge
+
+volumes:
+  chroma_data:
+    external: true
